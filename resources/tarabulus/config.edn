@@ -1,0 +1,14 @@
+{:tarabulus/http-server          {:port 8080}
+ :tarabulus/ring-handler-options {:cors-config [:post :put :delete]}
+ :tarabulus/ring-router-options  {:cors #ref [:tarabulus/ring-handler-options]}
+ :tarabulus/database             {:adapter       "postgresql"
+                                  :username      "faris"
+                                  :password      "bluemotorinagarage"
+                                  :database-name "tarabulus"}
+ :tarabulus/auth-token-encoder   {:alg    :hs512
+                                  :secret "foobar"}
+ :tarabulus/api-token-encoder    {:alg    :hs512
+                                  :secret "barfoo"}
+ :tarabulus/logger               {:set-root-config? true
+                                  :level            :debug}
+ :tarabulus/println-logger       {}}
