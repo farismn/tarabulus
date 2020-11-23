@@ -1,4 +1,4 @@
-(ns tarabulus.edge.sql
+(ns tarabulus.edge.sql.data
   (:require
    [camel-snake-kebab.core :as csk]
    [camel-snake-kebab.extras :as cske]
@@ -45,24 +45,24 @@
 
 (defmethod hug/hugsql-result-fn :1
   [_]
-  'tarabulus.edge.sql/result-one-snake->kebab)
+  'tarabulus.edge.sql.data/result-one-snake->kebab)
 
 (defmethod hug/hugsql-result-fn :one
   [_]
-  'tarabulus.edge.sql/result-one-snake->kebab)
+  'tarabulus.edge.sql.data/result-one-snake->kebab)
 
 (defmethod hug/hugsql-result-fn :*
   [_]
-  'tarabulus.edge.sql/result-many-snake->kebab)
+  'tarabulus.edge.sql.data/result-many-snake->kebab)
 
 (defmethod hug/hugsql-result-fn :many
   [_]
-  'tarabulus.edge.sql/result-many-snake->kebab)
+  'tarabulus.edge.sql.data/result-many-snake->kebab)
 
 (defmethod hug/hugsql-result-fn :n
   [_]
-  'tarabulus.edge.sql/result-affected-wrapped)
+  'tarabulus.edge.sql.data/result-affected-wrapped)
 
 (defmethod hug/hugsql-result-fn :affected
   [_]
-  'tarabulus.edge.sql/result-affected-wrapped)
+  'tarabulus.edge.sql.data/result-affected-wrapped)

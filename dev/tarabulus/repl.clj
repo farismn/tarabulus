@@ -12,6 +12,11 @@
    (let [source (io/resource "tarabulus/config.edn")]
      (trbls.sys/new-system source kind))))
 
+(defn get-component!
+  [k]
+  (or (get c.repl/system k)
+      (throw (ex-info "missing component" {:component k}))))
+
 (comment
 
   (c.repl/set-init (fn [_] (new-system)))

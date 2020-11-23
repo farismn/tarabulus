@@ -86,17 +86,17 @@
                  :meta-routes (rbt.c.reit-h/new-ring-routes trbls.rts.meta/routes)
                  :token-routes (rbt.c.reit-h/new-ring-routes trbls.rts.token/routes)
                  :user-routes (rbt.c.reit-h/new-ring-routes trbls.rts.user/routes))
-        deps   (-> {:http-server          [:ring-handler :logger]
-                    :ring-handler         [:ring-router :ring-handler-options :logger]
-                    :ring-router          [:ring-router-options :logger]
-                    :ring-handler-options [:logger]
-                    :ring-router-options  [:logger]
-                    :database             [:logger]
-                    :auth-token-encoder   [:logger]
-                    :api-token-encoder    [:logger]}
-                   (rbt.u.sys/merge-deps {:meta-routes  service-ks
-                                          :token-routes service-ks
-                                          :user-routes  service-ks})
+        deps   (-> {:http-server        [:ring-handler :logger]
+                    :ring-handler       [:ring-router :ring-handler-options :logger]
+                    :ring-router        [:ring-router-options :logger]
+                    :database           [:logger]
+                    :auth-token-encoder [:logger]
+                    :api-token-encoder  [:logger]}
+                   (rbt.u.sys/merge-deps {:ring-handler-options service-ks
+                                          :ring-router-options  service-ks
+                                          :meta-routes          service-ks
+                                          :token-routes         service-ks
+                                          :user-routes          service-ks})
                    (rbt.u.sys/inject-satisfying-deps system :ring-router rbt.edge.reit/RingRoutes)
                    (rbt.u.sys/inject-satisfying-deps system :logger rbt.edge.timbre/TimbreAppender))]
     (c/system-using system deps)))
