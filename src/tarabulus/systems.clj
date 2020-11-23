@@ -23,8 +23,13 @@
    [tarabulus.edge.database.sql]
    [tarabulus.edge.encoder.jwt]
    [tarabulus.routes.meta :as trbls.rts.meta]
+   [tarabulus.routes.token :as trbls.rts.token]
+   [tarabulus.routes.user :as trbls.rts.user]
    [taoensso.timbre :as timbre]
    [tunis.logger.reitit :as tns.log.reit]))
+
+(def ^:private service-ks
+  [:database :auth-token-encoder :api-token-encoder :logger])
 
 (defn- tunis-config
   [logger]
@@ -78,7 +83,9 @@
                  :api-token-encoder (rbt.c.jwt/new-jwt-encoder api-token-encoder)
                  :logger (rbt.c.timbre/new-timbre-logger logger)
                  :println-logger (rbt.c.timbre/new-timbre-appender make-timbre-println-appender println-logger)
-                 :meta-routes (rbt.c.reit-h/new-ring-routes trbls.rts.meta/routes))
+                 :meta-routes (rbt.c.reit-h/new-ring-routes trbls.rts.meta/routes)
+                 :token-routes (rbt.c.reit-h/new-ring-routes trbls.rts.token/routes)
+                 :user-routes (rbt.c.reit-h/new-ring-routes trbls.rts.user/routes))
         deps   (-> {:http-server          [:ring-handler :logger]
                     :ring-handler         [:ring-router :ring-handler-options :logger]
                     :ring-router          [:ring-router-options :logger]
@@ -86,8 +93,10 @@
                     :ring-router-options  [:logger]
                     :database             [:logger]
                     :auth-token-encoder   [:logger]
-                    :api-token-encoder    [:logger]
-                    :logger               [:println-logger]}
+                    :api-token-encoder    [:logger]}
+                   (rbt.u.sys/merge-deps {:meta-routes  service-ks
+                                          :token-routes service-ks
+                                          :user-routes  service-ks})
                    (rbt.u.sys/inject-satisfying-deps system :ring-router rbt.edge.reit/RingRoutes)
                    (rbt.u.sys/inject-satisfying-deps system :logger rbt.edge.timbre/TimbreAppender))]
     (c/system-using system deps)))
