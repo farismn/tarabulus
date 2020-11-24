@@ -1,0 +1,13 @@
+CREATE EXTENSION IF NOT EXISTS citext;
+--;;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+--;;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+--;;
+CREATE TABLE IF NOT EXISTS users (
+  id           UUID PRIMARY KEY,
+  username     CITEXT NOT NULL UNIQUE,
+  password     TEXT NOT NULL,
+  date_created TIMESTAMPTZ NOT NULL,
+  is_exist     BOOLEAN NOT NULL
+);

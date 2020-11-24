@@ -2,7 +2,7 @@
   (:require
    [clojure.java.io :as io]
    [com.stuartsierra.component.repl :as c.repl]
-   [tarabulus.edge.sql]
+   [tarabulus.edge.sql.data]
    [tarabulus.systems :as trbls.sys]))
 
 (defn- new-system
