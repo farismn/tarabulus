@@ -16,17 +16,17 @@
 
 (extend-protocol trbls.edge.enc/TokenEncoder
   rabat.components.jwt_encoder.SHASigner
-  (encode [{:keys [config] :as component} data]
+  (encode [{:keys [config] :as component} {:keys [claims]}]
     (let [duration (:duration config)
-          claims   (assoc-time data duration)]
-      (rbt.edge.jwt/encode component claims)))
-  (decode [component token]
+          claims'  (assoc-time claims duration)]
+      (rbt.edge.jwt/encode component claims')))
+  (decode [component {:keys [token]}]
     (rbt.edge.jwt/decode component token))
 
   rabat.components.jwt_encoder.AsymmetricSigner
-  (encode [{:keys [config] :as component} data]
+  (encode [{:keys [config] :as component} {:keys [claims]}]
     (let [duration (:duration config)
-          claims   (assoc-time data duration)]
-      (rbt.edge.jwt/encode component claims)))
-  (decode [component token]
+          claims'  (assoc-time claims duration)]
+      (rbt.edge.jwt/encode component claims')))
+  (decode [component {:keys [token]}]
     (rbt.edge.jwt/decode component token)))

@@ -1,0 +1,5 @@
+{:lint-as {expectations.clojure.test/defexpect clojure.test/deftest
+           expectations.clojure.test/expecting clojure.test/testing
+           expectations.clojure.test/from-each clojure.core/for
+           #_#_rabat.test.fixtures/glet        clojure.core/let}
+ :linters {:unresolved-symbol {:exclude [(taoensso.encore/catching)]}}}

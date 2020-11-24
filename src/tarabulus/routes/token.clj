@@ -1,10 +1,12 @@
 (ns tarabulus.routes.token
   (:require
+   [fmnoise.flow :as flow]
    [ring.util.http-response :as http.res]
    [ring.util.http-status :as http.sta]
    [tarabulus.data.token :as trbls.data.token]
    [tarabulus.data.user :as trbls.data.user]
    [tarabulus.edge.encoder :as trbls.edge.enc]
+   [tarabulus.handler.exception :as trbls.handler.ex]
    [tarabulus.interceptors.auth :as trbls.icept.auth]))
 
 (def AcceptedKinds
@@ -12,10 +14,12 @@
 
 (defn- request-token-handler
   [{:keys [auth-token-encoder]} {:keys [parameters]}]
-  (let [params (-> parameters :path (dissoc :kind))
-        kind   (-> parameters :path :kind)
-        token  (trbls.edge.enc/make-token auth-token-encoder params kind)]
-    (http.res/ok {:token {kind token}})))
+  (let [{:keys [kind] :as params} (:path parameters)]
+    (->> {:claims params}
+         (trbls.data.token/sanitize-claims)
+         (flow/then-call #(trbls.edge.enc/encode auth-token-encoder %))
+         (flow/then #(http.res/ok {:token {kind %}}))
+         (flow/else trbls.handler.ex/clj-ex-handler))))
 
 (defn routes
   [component]

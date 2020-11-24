@@ -6,6 +6,7 @@
    [rabat.edge.logger :refer [debug]]
    [ring.util.http-response :as http.res]
    [taoensso.encore :as e :refer [catching]]
+   [tarabulus.data.token :as trbls.data.token]
    [tarabulus.data.user :as trbls.data.user]
    [tarabulus.edge.database :as trbls.edge.db]
    [tarabulus.edge.encoder :as trbls.edge.enc]))
@@ -31,8 +32,7 @@
             (if (buddy.auth/authenticated? request)
               ctx
               (let [res (http.res/unauthorized
-                          {:error {:category :unauthenticated
-                                   :message  "unauthenticated"}})]
+                          {:error {:message "unauthenticated"}})]
                 (assoc ctx :queue [] :response res))))})
 
 (defn authentication-interceptor
@@ -61,11 +61,14 @@
    :authfn     (fn [_ token]
                  (let [token-encoder (if (= kind :api)
                                        api-token-encoder
-                                       auth-token-encoder)]
-                   (catching
-                     (trbls.edge.enc/read-token token-encoder token kind)
-                     err
-                     (debug logger ::tarablus-token-auth-backend-opts err))))
+                                       auth-token-encoder)
+                       params        {:token token}]
+                (catching
+                  (-> (trbls.edge.enc/decode token-encoder params)
+                      (trbls.data.token/coerce-payload)
+                      (trbls.data.token/validate-payload kind))
+                  err
+                  (debug logger ::tarablus-token-auth-backend-opts err))))
    :token-name (get-in config [:token-name kind] "TarabulusToken")})
 
 (defn authorized-interceptor
@@ -75,8 +78,7 @@
             (if (::authorized? (:self request))
               ctx
               (let [res (http.res/forbidden
-                          {:error {:category :unauthorized
-                                   :message  "unauthorized"}})]
+                          {:error {:message "unauthorized"}})]
                 (assoc ctx :queue [] :response res))))})
 
 (defn authorization-interceptor
