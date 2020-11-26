@@ -63,6 +63,11 @@
   (merge (timbre/println-appender config)
          (select-keys config [:min-level])))
 
+(defn- new-hikari-cp
+  [{:keys [pool-spec migration-settings]}]
+  (let [hikari (rbt.c.hikari/new-hikari-cp pool-spec)]
+    (assoc hikari :migration-settings migration-settings)))
+
 (defn- new-app-base-system
   [{:tarabulus/keys [http-server
                      ring-handler-options
@@ -78,9 +83,7 @@
                  :ring-router (rbt.c.reit-h/new-ring-router)
                  :ring-handler-options (rbt.c.reit-h/new-ring-options make-ring-handler-opts ring-handler-options)
                  :ring-router-options (rbt.c.reit-h/new-ring-options make-ring-router-opts ring-router-options)
-                 :database (-> (:pool-spec database)
-                               (rbt.c.hikari/new-hikari-cp)
-                               (assoc :migration-settings (:migration-settings database)))
+                 :database (new-hikari-cp database)
                  :auth-token-encoder (rbt.c.jwt/new-jwt-encoder auth-token-encoder)
                  :api-token-encoder (rbt.c.jwt/new-jwt-encoder api-token-encoder)
                  :logger (rbt.c.timbre/new-timbre-logger logger)
@@ -103,8 +106,16 @@
                    (rbt.u.sys/inject-satisfying-deps system :logger rbt.edge.timbre/TimbreAppender))]
     (c/system-using system deps)))
 
+(defn- new-db-base-system
+  [{:tarabulus/keys [database logger println-logger]}]
+  (c/system-map
+    :database (new-hikari-cp database)
+    :logger (rbt.c.timbre/new-timbre-logger logger)
+    :println-logger (rbt.c.timbre/new-timbre-appender make-timbre-println-appender println-logger)))
+
 (def ^:private systems-map
-  {:app/development new-app-base-system})
+  {:app/development new-app-base-system
+   :db/test         new-db-base-system})
 
 (defn new-system
   [source kind]

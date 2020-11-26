@@ -6,6 +6,7 @@
    [clj-time.types :as time.types]
    [clojure.spec.alpha :as s]
    [clojure.test.check.generators :as t.gen]
+   [com.gfredericks.test.chuck.generators :as t.gen']
    [malli.util :as ml.u]
    [taoensso.encore :as e :refer [catching]]))
 
@@ -16,7 +17,7 @@
   (letfn [(length-ok?
             [x]
             (<= 4 (count x) 20))]
-    [:fn {:gen/gen (t.gen/such-that length-ok? t.gen/string-alphanumeric)}
+    [:fn {:gen/gen (t.gen'/string-from-regex #"[a-zA-Z0-9]{4,20}")}
      #(and (string? %) (length-ok? %))]))
 
 (def Password
@@ -26,7 +27,7 @@
 (def DateCreated
   [:fn {:gen/gen (s/gen ::time.s/date-time)} time.types/date-time?])
 
-(def Existence
+(def Exist?
   [boolean? {:gen/gen t.gen/boolean}])
 
 (def User
@@ -35,10 +36,15 @@
    [:username Username]
    [:password Password]
    [:date-created DateCreated]
-   [:exist? Existence]])
+   [:exist? Exist?]])
 
 (def SmartNewUser
   (ml.u/optional-keys User [:id :date-created :exist?]))
+
+(def AuthenticableUser
+  (-> User
+      (ml.u/select-keys [:username :password])
+      (ml.u/optional-keys [:password])))
 
 (def PasswordResetee
   [:map

@@ -2,12 +2,16 @@
   (:require
    [malli.core :as ml]
    [malli.transform :as ml.trans]
-   [tarabulus.data.token :as trbls.data.token]
    [taoensso.encore :as e]))
 
+(def Claims map?)
 (def Token string?)
 (def Kind keyword?)
 (def Payload [:map [:kind Kind]])
+
+(def EncodeParams
+  [:map
+   [:claims Claims]])
 
 (defn sanitize-claims
   [params]

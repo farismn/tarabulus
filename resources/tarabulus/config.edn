@@ -1,14 +1,25 @@
-{:tarabulus/http-server          {:port 8080}
+{:tarabulus/http-server          {:port #profile {:default 8000
+                                                  :dev     8080
+                                                  :test    9090}}
  :tarabulus/ring-handler-options {:cors-config [:post :put :delete]}
  :tarabulus/ring-router-options  {:cors #ref [:tarabulus/ring-handler-options]}
- :tarabulus/database             {:pool-spec {:adapter       "postgresql"
-                                              :username      "faris"
-                                              :password      "bluemotorinagarage"
-                                              :database-name "tarabulus"}}
- :tarabulus/auth-token-encoder   {:alg    :hs512
-                                  :secret "foobar"}
- :tarabulus/api-token-encoder    {:alg    :hs512
-                                  :secret "barfoo"}
+ :tarabulus/database             {:pool-spec          {:adapter       "postgresql"
+                                                       :username      "faris"
+                                                       :password      "bluemotorinagarage"
+                                                       :database-name #profile {:dev  "tarabulus"
+                                                                                :test "tarabulus_test"}}
+                                  :migration-settings {:store         :database
+                                                       :migration-dir "tarabulus/pg/migrations"}}
+ :tarabulus/auth-token-encoder   {:alg    #profile {:dev  :hs512
+                                                    :test :hs512}
+                                  :secret #profile {:dev  "foobar"
+                                                    :test "barfoo"}}
+ :tarabulus/api-token-encoder    {:alg    #profile {:dev  :hs512
+                                                    :test :hs512}
+                                  :secret #profile {:dev  "barfoo"
+                                                    :test "foobar"}}
  :tarabulus/logger               {:set-root-config? true
-                                  :level            :debug}
- :tarabulus/println-logger       {}}
+                                  :level            #profile {:dev  :debug
+                                                              :test :debug}}
+ :tarabulus/println-logger       {:enabled? #profile {:dev  :true
+                                                      :test :false}}}

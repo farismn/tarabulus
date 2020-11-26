@@ -33,7 +33,8 @@
            buddy/buddy-hashers                 {:mvn/version "1.6.0"}
            buddy/buddy-auth                    {:mvn/version "2.2.0"}
            org.clojure/test.check              {:mvn/version "1.1.0"}
-           fmnoise/flow                        {:mvn/version "4.0.0"}}
+           fmnoise/flow                        {:mvn/version "4.0.0"}
+           com.gfredericks/test.chuck          {:mvn/version "0.2.10"}}
  :aliases {:dev  {:extra-paths ["dev"]
                   :extra-deps  {com.stuartsierra/component.repl {:mvn/version "0.2.0"}}}
            :test {:extra-paths ["test"]
