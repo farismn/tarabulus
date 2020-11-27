@@ -31,10 +31,13 @@
 
 (defn- make-auth-token
   [auth-token-encoder attrs]
-  (->> {:claims attrs}
-       (trbls.data.token/sanitize-claims)
-       (trbls.data.token/assoc-kind :auth)
-       (trbls.edge.enc/encode auth-token-encoder)))
+  (letfn [(assoc-kind
+            [k m]
+            (trbls.data.token/assoc-kind m k))]
+    (->> {:claims attrs}
+         (trbls.data.token/sanitize-claims)
+         (assoc-kind :auth)
+         (trbls.edge.enc/encode auth-token-encoder))))
 
 (defn- safe-reset-user-password!
   [database params]
@@ -125,6 +128,7 @@
              (trbls.data.user/reset-user-password))
          (safe-reset-user-password! database)
          (flow/then #(make-auth-token auth-token-encoder %))
+         (flow/then #(http.res/ok {:token {:auth %}}))
          (flow/else-if PSQLException trbls.handler.ex/pg-ex-handler)
          (flow/else trbls.handler.ex/clj-ex-handler))))
 

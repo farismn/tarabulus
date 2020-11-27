@@ -1,6 +1,7 @@
 {:lint-as {expectations.clojure.test/defexpect           clojure.test/deftest
            expectations.clojure.test/expecting           clojure.test/testing
            expectations.clojure.test/from-each           clojure.core/for
+           taoensso.encore/if-let                        clojure.core/let
            clojure.test.check.clojure-test/defspec       clojure.core/def
            com.gfredericks.test.chuck.properties/for-all clojure.core/for}
  :linters {:unresolved-symbol {:exclude [(taoensso.encore/catching)]}}}

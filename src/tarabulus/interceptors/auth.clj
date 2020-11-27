@@ -75,7 +75,7 @@
   []
   {:name  ::authorized
    :enter (fn [{:keys [request] :as ctx}]
-            (if (::authorized? (:self request))
+            (if (::authorized? (:identity request))
               ctx
               (let [res (http.res/forbidden
                           {:error {:message "unauthorized"}})]
@@ -85,7 +85,7 @@
   [check-permission]
   {:name  ::authorization
    :enter (fn [{:keys [request] :as ctx}]
-            (let [self (:self request)]
+            (let [self (:identity request)]
               (if (and (some? self) (check-permission request self))
                 (assoc-in ctx [:request :identity ::authorized?] true)
                 ctx)))})

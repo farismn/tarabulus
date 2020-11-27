@@ -20,8 +20,10 @@
    [reitit.http.interceptors.parameters :as reit.h.icept.params]
    [reitit.interceptor.sieppari :as reit.icept.siepp]
    [simple-cors.reitit.interceptor :as cors :as cors.reit.icept]
+   [tarabulus.components.http-client :as trbls.c.http-clt]
    [tarabulus.edge.database.sql]
    [tarabulus.edge.encoder.jwt]
+   [tarabulus.edge.ring.reitit-http]
    [tarabulus.routes.meta :as trbls.rts.meta]
    [tarabulus.routes.token :as trbls.rts.token]
    [tarabulus.routes.user :as trbls.rts.user]
@@ -40,7 +42,7 @@
 (defn- make-ring-handler-opts
   [{:keys [config]}]
   {:executor     reit.icept.siepp/executor
-   :interceptors [(cors.reit.icept/cors-interceptor config)]})
+   :interceptors [(cors.reit.icept/cors-interceptor (:cors config))]})
 
 (defn- make-ring-router-opts
   [{:keys [config logger]}]
@@ -61,7 +63,7 @@
 (defn- make-timbre-println-appender
   [{:keys [config]}]
   (merge (timbre/println-appender config)
-         (select-keys config [:min-level])))
+         (select-keys config [:min-level :enabled?])))
 
 (defn- new-hikari-cp
   [{:keys [pool-spec migration-settings]}]
@@ -106,6 +108,15 @@
                    (rbt.u.sys/inject-satisfying-deps system :logger rbt.edge.timbre/TimbreAppender))]
     (c/system-using system deps)))
 
+(defn- new-app-dev-system
+  [{:tarabulus/keys [tarabulus-client] :as config}]
+  (let [system (merge (new-app-base-system config)
+                      (c/system-map
+                        :tarabulus-client (trbls.c.http-clt/new-http-client tarabulus-client)))
+        deps   (-> {:tarabulus-client [:ring-router]}
+                   (rbt.u.sys/merge-deps {:tarabulus-client service-ks}))]
+    (c/system-using system deps)))
+
 (defn- new-db-base-system
   [{:tarabulus/keys [database logger println-logger]}]
   (c/system-map
@@ -114,7 +125,8 @@
     :println-logger (rbt.c.timbre/new-timbre-appender make-timbre-println-appender println-logger)))
 
 (def ^:private systems-map
-  {:app/development new-app-base-system
+  {:app/development new-app-dev-system
+   :app/test        new-app-dev-system
    :db/test         new-db-base-system})
 
 (defn new-system
