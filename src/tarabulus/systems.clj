@@ -125,8 +125,10 @@
     :println-logger (rbt.c.timbre/new-timbre-appender make-timbre-println-appender println-logger)))
 
 (def ^:private systems-map
-  {:app/development new-app-dev-system
+  {:app/production  new-app-base-system
+   :app/development new-app-dev-system
    :app/test        new-app-dev-system
+   :db/development  new-db-base-system
    :db/test         new-db-base-system})
 
 (defn new-system

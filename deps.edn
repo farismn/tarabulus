@@ -35,7 +35,8 @@
            org.clojure/test.check              {:mvn/version "1.1.0"}
            fmnoise/flow                        {:mvn/version "4.0.0"}
            com.gfredericks/test.chuck          {:mvn/version "0.2.10"}
-           clj-http/clj-http                   {:mvn/version "3.11.0"}}
+           clj-http/clj-http                   {:mvn/version "3.11.0"}
+           org.clojure/tools.cli               {:mvn/version "1.0.194"}}
  :aliases {:dev  {:extra-paths ["dev"]
                   :extra-deps  {com.stuartsierra/component.repl {:mvn/version "0.2.0"}}}
            :test {:extra-paths ["test"]
