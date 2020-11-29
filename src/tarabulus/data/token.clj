@@ -4,22 +4,18 @@
    [malli.transform :as ml.trans]
    [taoensso.encore :as e]))
 
-(def Claims map?)
+(def Claims [:map])
 (def Token string?)
 (def Kind keyword?)
 (def Payload [:map [:kind Kind]])
 
-(def EncodeParams
-  [:map
-   [:claims Claims]])
-
 (defn sanitize-claims
-  [params]
-  (update params :claims dissoc :password))
+  [claims]
+  (dissoc claims :password))
 
 (defn assoc-kind
-  [params kind]
-  (assoc-in params [:claims :kind] kind))
+  [claims kind]
+  (assoc claims :kind kind))
 
 (defn coerce-payload
   [payload]

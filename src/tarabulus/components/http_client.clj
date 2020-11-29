@@ -75,7 +75,7 @@
         encoder (if (= kind :api) api-token-encoder auth-token-encoder)
         token   (let [token (get req token-k)]
                   (if (map? token)
-                    (-> {:claims token}
+                    (-> token
                         (trbls.data.token/sanitize-claims)
                         (trbls.data.token/assoc-kind kind)
                         (as-> <> (trbls.edge.enc/encode encoder <>)))

@@ -30,32 +30,16 @@
    [:new-password trbls.data.user/Password]])
 
 (defn- make-auth-token
-  [auth-token-encoder attrs]
-  (letfn [(assoc-kind
-            [k m]
-            (trbls.data.token/assoc-kind m k))]
-    (->> {:claims attrs}
-         (trbls.data.token/sanitize-claims)
-         (assoc-kind :auth)
-         (trbls.edge.enc/encode auth-token-encoder))))
-
-(defn- safe-reset-user-password!
-  [database params]
-  (->> params
-       (flow/then-call #(trbls.edge.db/reset-user-password! database %))
-       (flow/then (fn [user]
-                    (if (nil? user)
-                      (let [message "unable to reset the user's password"
-                            body    {:error {:message message}}]
-                        (ex-info message {:kind     :tarabulus/exception
-                                          :category :incorrect
-                                          :body     body}))
-                      user)))))
+  [auth-token-encoder claims]
+  (-> claims
+      (trbls.data.token/sanitize-claims)
+      (trbls.data.token/assoc-kind :auth)
+      (as-> <> (trbls.edge.enc/encode auth-token-encoder <>))))
 
 (defn- register-user
   [{:keys [database auth-token-encoder]} {:keys [parameters]}]
-  (->> (-> parameters :body :user :registree trbls.data.user/create-user)
-       (flow/then-call #(trbls.edge.db/create-user! database %))
+  (->> (-> parameters :body :user :registree)
+       (flow/then-call #(trbls.edge.db/add-user! database %))
        (flow/then-call #(make-auth-token auth-token-encoder %))
        (flow/then #(http.res/ok {:token {:auth %}}))
        (flow/else-if PSQLException trbls.handler.ex/pg-ex-handler)
@@ -70,7 +54,7 @@
 
 (defn- erase-user
   [{:keys [database]} {:keys [parameters]}]
-  (->> (:path parameters)
+  (->> (-> parameters :path :username)
        (flow/then-call #(trbls.edge.db/delete-user! database %))
        (flow/then (fn [result]
                     (if (:database/happened? result)
@@ -86,25 +70,30 @@
 
 (defn- modify-user-password
   [{:keys [database auth-token-encoder]} {:keys [parameters]}]
-  (->> (merge (:path parameters) (-> parameters :body :user :password-updatee))
-       (flow/then-call (fn [{:keys [old-password] :as params}]
-                         (if (some? (some-> (trbls.edge.db/find-user database params)
-                                            (trbls.data.user/authenticate-user old-password)))
-                           (trbls.data.user/reset-user-password params)
-                           (let [message "unable to reset the user's password"
-                                 body    {:error {:message message}}]
-                             (ex-info message {:kind     :tarabulus/exception
-                                               :category :incorrect
-                                               :body     body})))))
-       (safe-reset-user-password! database)
-       (flow/then-call #(make-auth-token auth-token-encoder %))
-       (flow/then #(http.res/ok {:token {:auth %}}))
-       (flow/else-if PSQLException trbls.handler.ex/pg-ex-handler)
-       (flow/else trbls.handler.ex/clj-ex-handler)))
+  (let [username (-> parameters :path :username)
+        new-pwd  (-> parameters :body :user :password-updatee :new-password)
+        old-pwd  (-> parameters :body :user :password-updatee :old-password)]
+    (->> (flow/call trbls.edge.db/update-user-password!
+                    database
+                    username
+                    new-pwd
+                    old-pwd)
+         (flow/then (fn [user]
+                      (if (nil? user)
+                        (let [message "unable to reset the user's password"
+                              body    {:error {:message message}}]
+                          (ex-info message {:kind     :tarabulus/exception
+                                            :category :incorrect
+                                            :body     body}))
+                        user)))
+         (flow/then #(make-auth-token auth-token-encoder %))
+         (flow/then #(http.res/ok {:token {:auth %}}))
+         (flow/else-if PSQLException trbls.handler.ex/pg-ex-handler)
+         (flow/else trbls.handler.ex/clj-ex-handler))))
 
 (defn- revive-user
   [{:keys [database auth-token-encoder]} {:keys [parameters]}]
-  (->> (:path parameters)
+  (->> (-> parameters :path :username)
        (flow/then-call #(trbls.edge.db/restore-user! database %))
        (flow/then (fn [user]
                     (if (nil? user)
@@ -121,12 +110,17 @@
 
 (defn- overwrite-user-password
   [{:keys [database auth-token-encoder]} {:keys [parameters]}]
-  (let [username    (-> parameters :path :username)
-        pwd-resetee (-> parameters :body :user :password-resetee)]
-    (->> (-> pwd-resetee
-             (assoc :username username)
-             (trbls.data.user/reset-user-password))
-         (safe-reset-user-password! database)
+  (let [username (-> parameters :path :username)
+        new-pwd  (-> parameters :body :user :password-resetee :new-password)]
+    (->> (flow/call trbls.edge.db/set-user-password! database username new-pwd)
+         (flow/then (fn [user]
+                      (if (nil? user)
+                        (let [message "unable to reset the user's password"
+                              body    {:error {:message message}}]
+                          (ex-info message {:kind     :tarabulus/exception
+                                            :category :incorrect
+                                            :body     body}))
+                        user)))
          (flow/then #(make-auth-token auth-token-encoder %))
          (flow/then #(http.res/ok {:token {:auth %}}))
          (flow/else-if PSQLException trbls.handler.ex/pg-ex-handler)
@@ -138,7 +132,7 @@
     {:name ::anon
      :post {:responses  {http.sta/ok {:body [:map [:token WrappedAuthToken]]}}
             :parameters {:body [:map [:user [:map [:registree Registree]]]]}
-            :handler    (partial register-user component)}}]
+            :handler    #(register-user component %)}}]
    ["/api/user/:username"
     {:name       ::target
      :parameters {:path [:map [:username trbls.data.user/Username]]}
@@ -147,19 +141,19 @@
                                  (trbls.icept.auth/authenticated-interceptor)
                                  (trbls.icept.auth/authorization-interceptor trbls.icept.auth/path-username-ok?)
                                  (trbls.icept.auth/authorized-interceptor)]
-                  :handler      (partial request-auth-token component)}
+                  :handler      #(request-auth-token component %)}
      :put        {:responses    {http.sta/ok {:body [:map [:token WrappedAuthToken]]}}
                   :parameters   {:body [:map [:user [:map [:password-updatee PasswordUpdatee]]]]}
                   :interceptors [(trbls.icept.auth/authentication-interceptor (trbls.icept.auth/tarabulus-token-auth-backend-opts component :auth))
                                  (trbls.icept.auth/authenticated-interceptor)
                                  (trbls.icept.auth/authorization-interceptor trbls.icept.auth/path-username-ok?)
                                  (trbls.icept.auth/authorized-interceptor)]
-                  :handler      (partial modify-user-password component)}
+                  :handler      #(modify-user-password component %)}
      :delete     {:interceptors [(trbls.icept.auth/authentication-interceptor (trbls.icept.auth/tarabulus-token-auth-backend-opts component :auth))
                                  (trbls.icept.auth/authenticated-interceptor)
                                  (trbls.icept.auth/authorization-interceptor trbls.icept.auth/path-username-ok?)
                                  (trbls.icept.auth/authorized-interceptor)]
-                  :handler      (partial erase-user component)}}]
+                  :handler      #(erase-user component %)}}]
    ["/api/user/:username/restore"
     {:name       ::restore
      :parameters {:path [:map [:username trbls.data.user/Username]]}
@@ -168,7 +162,7 @@
                                  (trbls.icept.auth/authenticated-interceptor)
                                  (trbls.icept.auth/authorization-interceptor trbls.icept.auth/path-username-ok?)
                                  (trbls.icept.auth/authorized-interceptor)]
-                  :handler      (partial revive-user component)}}]
+                  :handler      #(revive-user component %)}}]
    ["/api/user/:username/reset"
     {:name       ::reset
      :parameters {:path [:map [:username trbls.data.user/Username]]}
@@ -178,4 +172,4 @@
                                  (trbls.icept.auth/authenticated-interceptor)
                                  (trbls.icept.auth/authorization-interceptor trbls.icept.auth/path-username-ok?)
                                  (trbls.icept.auth/authorized-interceptor)]
-                  :handler      (partial overwrite-user-password component)}}]])
+                  :handler      #(overwrite-user-password component %)}}]])

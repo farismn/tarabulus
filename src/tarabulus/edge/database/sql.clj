@@ -29,16 +29,17 @@
 
 (extend-protocol trbls.edge.db/UserRepository
   rabat.components.hikari_cp.HikariCP
-  (create-user! [component params]
-    (create-user! component params))
-  (find-user [component params]
-    (find-user component params))
-  (delete-user! [component params]
-    (delete-user! component params))
-  (restore-user! [component params]
-    (restore-user! component params))
-  (reset-user-password! [component params]
-    (reset-user-password! component params)))
+  (create-user! [component new-user]
+    (create-user! component new-user))
+  (find-user [component username]
+    (find-user component {:username username}))
+  (delete-user! [component username]
+    (delete-user! component {:username username}))
+  (restore-user! [component username]
+    (restore-user! component {:username username}))
+  (reset-user-password! [component username new-password]
+    (reset-user-password! component {:username     username
+                                     :new-password new-password})))
 
 (extend-protocol trbls.edge.db/Migratable
   rabat.components.hikari_cp.HikariCP

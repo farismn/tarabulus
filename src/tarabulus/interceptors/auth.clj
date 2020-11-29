@@ -1,11 +1,12 @@
 (ns tarabulus.interceptors.auth
+  (:refer-clojure :exclude [when-let])
   (:require
    [buddy.auth]
    [buddy.auth.backends :as buddy.backends]
    [buddy.auth.middleware :as buddy.auth.mdw]
    [rabat.edge.logger :refer [debug]]
    [ring.util.http-response :as http.res]
-   [taoensso.encore :as e :refer [catching]]
+   [taoensso.encore :as e :refer [catching when-let]]
    [tarabulus.data.token :as trbls.data.token]
    [tarabulus.data.user :as trbls.data.user]
    [tarabulus.edge.database :as trbls.edge.db]
@@ -47,7 +48,14 @@
 (defn basic-auth-backend-opts
   [{:keys [database logger]}]
   {:backend :basic
-   :authfn  (fn [_ {:keys [username password] :as credential}]
+   :authfn  (fn [_ credential]
+              (when-let [username (:username credential)
+                         password (:password credential)]
+                (catching
+                  (trbls.edge.db/login-user database username password)
+                  err
+                  (debug logger ::basic-auth-backend-opts err))))
+   #_       (fn [_ {:keys [username password] :as credential}]
               (when (and (some? username) (some? password))
                 (catching
                   (some-> (trbls.edge.db/find-user database credential)
@@ -59,16 +67,15 @@
   [{:keys [config auth-token-encoder api-token-encoder logger]} kind]
   {:backend    :token
    :authfn     (fn [_ token]
-                 (let [token-encoder (if (= kind :api)
-                                       api-token-encoder
-                                       auth-token-encoder)
-                       params        {:token token}]
-                (catching
-                  (-> (trbls.edge.enc/decode token-encoder params)
-                      (trbls.data.token/coerce-payload)
-                      (trbls.data.token/validate-payload kind))
-                  err
-                  (debug logger ::tarablus-token-auth-backend-opts err))))
+                 (let [encoder (if (= kind :api)
+                                 api-token-encoder
+                                 auth-token-encoder)]
+                   (catching
+                     (-> (trbls.edge.enc/decode encoder token)
+                         (trbls.data.token/coerce-payload)
+                         (trbls.data.token/validate-payload kind))
+                     err
+                     (debug logger ::tarablus-token-auth-backend-opts err))))
    :token-name (get-in config [:token-name kind] "TarabulusToken")})
 
 (defn authorized-interceptor

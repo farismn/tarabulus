@@ -67,7 +67,3 @@
   [{:keys [password] :as user} attempt-password]
   (when (catching (buddy.hash/check attempt-password password))
     user))
-
-(defn reset-user-password
-  [attrs]
-  (update attrs :new-password buddy.hash/derive))

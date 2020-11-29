@@ -12,18 +12,17 @@
 
 (defspec sanitize-claims-remove-censored-key
   (t.ck.ch/times 100)
-  (for-all [params (-> trbls.data.token/EncodeParams
-                       (ml.u/assoc :claims [:map
-                                            [:password trbls.data.user/Password]])
+  (for-all [claims (-> trbls.data.token/Claims
+                       (ml.u/assoc :password trbls.data.user/Password)
                        (ml.gen/generator))]
-    (nil? (:password (:claims (trbls.data.token/sanitize-claims params))))))
+    (nil? (:password (:claims (trbls.data.token/sanitize-claims claims))))))
 
 (defspec assoc-kind-as-its-name-implies
   (t.ck.ch/times 100)
-  (for-all [params (ml.gen/generator trbls.data.token/EncodeParams)
+  (for-all [claims (ml.gen/generator trbls.data.token/Claims)
             kind   (ml.gen/generator trbls.data.token/Kind)]
-    (= (trbls.data.token/assoc-kind params kind)
-       (assoc-in params [:claims :kind] kind))))
+    (= (trbls.data.token/assoc-kind claims kind)
+       (assoc claims :kind kind))))
 
 (def ^:private RawPayload
   [:map [:kind [:or string? keyword?]]])

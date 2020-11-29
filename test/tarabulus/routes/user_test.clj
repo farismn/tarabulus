@@ -5,10 +5,8 @@
    [expectations.clojure.test :refer [defexpect expecting expect]]
    [malli.generator :as ml.gen]
    [rabat.utils.test :as rbt.u.t]
-   [tarabulus.data.token :as trbls.data.token]
    [tarabulus.data.user :as trbls.data.user]
    [tarabulus.edge.client :as trbls.edge.clt]
-   [tarabulus.routes.token :as trbls.rts.token]
    [tarabulus.routes.user :as trbls.rts.user]
    [tarabulus.test.fixtures :as trbls.t.fxt]
    [ring.util.http-predicates :as http.pred]))

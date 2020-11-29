@@ -50,11 +50,3 @@
     (with-redefs [buddy.hash/check =]
       (let [user' (assoc user :password pwd)]
         (= (trbls.data.user/authenticate-user user' pwd) user')))))
-
-(defspec reset-user-password-updates-password
-  (t.ck.ch/times 100)
-  (for-all [resetee (ml.gen/generator trbls.data.user/PasswordResetee)]
-    (with-redefs [buddy.hash/derive dummy-derive]
-      (let [result (trbls.data.user/reset-user-password resetee)]
-        (= (:new-password result)
-           (buddy.hash/derive (:new-password resetee)))))))

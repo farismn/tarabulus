@@ -49,11 +49,11 @@
       (trbls.edge.db/create-user! db euser)
       (trbls.edge.db/create-user! db neuser)
       (expect nil?
-        (trbls.edge.db/find-user db {:username username}))
+        (trbls.edge.db/find-user db username))
       (expect nil?
-        (trbls.edge.db/find-user db neuser))
+        (trbls.edge.db/find-user db (:username neuser)))
       (expect euser
-        (trbls.edge.db/find-user db euser)))))
+        (trbls.edge.db/find-user db (:username euser))))))
 
 (defexpect delete-user!-test
   (expecting "user deleted"
@@ -64,13 +64,13 @@
       (trbls.edge.db/create-user! db euser)
       (trbls.edge.db/create-user! db neuser)
       (expect {:database/happened? false}
-        (in (trbls.edge.db/delete-user! db {:username username})))
+        (in (trbls.edge.db/delete-user! db username)))
       (expect {:database/happened? false}
-        (in (trbls.edge.db/delete-user! db neuser)))
+        (in (trbls.edge.db/delete-user! db (:username neuser))))
       (expect {:database/happened? true}
-        (in (trbls.edge.db/delete-user! db euser)))
+        (in (trbls.edge.db/delete-user! db (:username euser))))
       (expect {:database/happened? false}
-        (in (trbls.edge.db/delete-user! db euser))))))
+        (in (trbls.edge.db/delete-user! db (:username euser)))))))
 
 (defexpect restore-user!-test
   (expecting "user restored"
@@ -80,15 +80,15 @@
           username (generate-schema trbls.data.user/Username)]
       (trbls.edge.db/create-user! db euser)
       (trbls.edge.db/create-user! db neuser)
-      (trbls.edge.db/delete-user! db euser)
+      (trbls.edge.db/delete-user! db (:username euser))
       (expect nil?
-        (trbls.edge.db/restore-user! db {:username username}))
+        (trbls.edge.db/restore-user! db username))
       (expect (assoc neuser :exist? true)
-        (trbls.edge.db/restore-user! db neuser))
+        (trbls.edge.db/restore-user! db (:username neuser)))
       (expect euser
-        (trbls.edge.db/restore-user! db euser))
+        (trbls.edge.db/restore-user! db (:username euser)))
       (expect nil?
-        (trbls.edge.db/restore-user! db euser)))))
+        (trbls.edge.db/restore-user! db (:username euser))))))
 
 (defexpect reset-user-password!-test
   (expecting "user's password changed"
@@ -100,11 +100,10 @@
       (trbls.edge.db/create-user! db euser)
       (trbls.edge.db/create-user! db neuser)
       (expect nil?
-        (let [params {:username username :new-password password}]
-          (trbls.edge.db/reset-user-password! db params)))
+        (trbls.edge.db/reset-user-password! db username password))
       (expect nil?
-        (let [params (assoc neuser :new-password password)]
-          (trbls.edge.db/reset-user-password! db params)))
+        (let [username (:username neuser)]
+          (trbls.edge.db/reset-user-password! db username password)))
       (expect (assoc euser :password password)
-        (let [params (assoc euser :new-password password)]
-          (trbls.edge.db/reset-user-password! db params))))))
+        (let [username (:username euser)]
+          (trbls.edge.db/reset-user-password! db username password))))))

@@ -15,8 +15,9 @@
 (defn- request-token-handler
   [{:keys [auth-token-encoder]} {:keys [parameters]}]
   (let [{:keys [kind] :as params} (:path parameters)]
-    (->> {:claims params}
-         (trbls.data.token/sanitize-claims)
+    (->> (-> params
+             (trbls.data.token/sanitize-claims)
+             (trbls.data.token/assoc-kind kind))
          (flow/then-call #(trbls.edge.enc/encode auth-token-encoder %))
          (flow/then #(http.res/ok {:token {kind %}}))
          (flow/else trbls.handler.ex/clj-ex-handler))))
