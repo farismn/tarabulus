@@ -27,6 +27,7 @@
    [tarabulus.routes.meta :as trbls.rts.meta]
    [tarabulus.routes.token :as trbls.rts.token]
    [tarabulus.routes.user :as trbls.rts.user]
+   [taoensso.encore :as e]
    [taoensso.timbre :as timbre]
    [tunis.logger.reitit :as tns.log.reit]))
 
@@ -62,8 +63,8 @@
 
 (defn- make-timbre-println-appender
   [{:keys [config]}]
-  (merge (timbre/println-appender config)
-         (select-keys config [:min-level :enabled?])))
+  (e/merge (timbre/println-appender config)
+           (select-keys config [:min-level :enabled?])))
 
 (defn- new-hikari-cp
   [{:keys [pool-spec migration-settings]}]
@@ -119,10 +120,13 @@
 
 (defn- new-db-base-system
   [{:tarabulus/keys [database logger println-logger]}]
-  (c/system-map
-    :database (new-hikari-cp database)
-    :logger (rbt.c.timbre/new-timbre-logger logger)
-    :println-logger (rbt.c.timbre/new-timbre-appender make-timbre-println-appender println-logger)))
+  (let [system (c/system-map
+                 :database (new-hikari-cp database)
+                 :logger (rbt.c.timbre/new-timbre-logger logger)
+                 :println-logger (rbt.c.timbre/new-timbre-appender make-timbre-println-appender println-logger))
+        deps   (-> {:database [:logger]}
+                   (rbt.u.sys/inject-satisfying-deps system :logger rbt.edge.timbre/TimbreAppender))]
+    (c/system-using system deps)))
 
 (def ^:private systems-map
   {:app/production  new-app-base-system

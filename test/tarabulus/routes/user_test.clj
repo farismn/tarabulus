@@ -26,7 +26,7 @@
   (expecting "user registered"
     (let [trbls-client (rbt.u.t/get-component! :tarabulus-client)
           registree    (generate-schema trbls.rts.user/Registree)
-          run-api      (partial trbls.edge.clt/register-user trbls-client)]
+          run-api      #(trbls.edge.clt/register-user trbls-client %)]
       (expect http.pred/bad-request?
         (run-api {}))
       (expect http.pred/ok?
@@ -38,7 +38,7 @@
   (expecting "authentication token"
     (let [trbls-client (rbt.u.t/get-component! :tarabulus-client)
           reg          (generate-schema trbls.rts.user/Registree)
-          run-api      (partial trbls.edge.clt/login-user trbls-client)]
+          run-api      #(trbls.edge.clt/login-user trbls-client %)]
       (trbls.edge.clt/register-user
         trbls-client
         {:form-params {:user {:registree reg}}})
@@ -46,8 +46,8 @@
         (run-api {:target-username (:username reg)}))
       (expect http.pred/forbidden?
         (let [username (generate-schema trbls.data.user/Username)]
-              (run-api {:target-username username
-                        :basic-auth      reg})))
+          (run-api {:target-username username
+                    :basic-auth      reg})))
       (expect http.pred/ok?
         (run-api {:target-username (:username reg)
                   :basic-auth      reg})))))
@@ -56,7 +56,7 @@
   (expecting "user deleted"
     (let [trbls-client (rbt.u.t/get-component! :tarabulus-client)
           reg          (generate-schema trbls.rts.user/Registree)
-          run-api      (partial trbls.edge.clt/delete-user trbls-client)]
+          run-api      #(trbls.edge.clt/delete-user trbls-client %)]
       (trbls.edge.clt/register-user trbls-client {:form-params {:user {:registree reg}}})
       (expect http.pred/unauthorized?
         (run-api {:target-username (:username reg)}))
@@ -73,7 +73,7 @@
     (let [ trbls-client (rbt.u.t/get-component! :tarabulus-client)
           reg           (generate-schema trbls.rts.user/Registree)
           pwd-updatee   (generate-schema trbls.rts.user/PasswordUpdatee)
-          run-api       (partial trbls.edge.clt/update-user-password  trbls-client )]
+          run-api       #(trbls.edge.clt/update-user-password trbls-client %)]
       (trbls.edge.clt/register-user  trbls-client  {:form-params {:user {:registree reg}}})
       (expect http.pred/bad-request?
         (run-api {:target-username (:username reg)}))
@@ -103,7 +103,7 @@
   (expecting "user restored"
     (let [trbls-client (rbt.u.t/get-component! :tarabulus-client)
           reg          (generate-schema trbls.rts.user/Registree)
-          run-api      (partial trbls.edge.clt/restore-user trbls-client)]
+          run-api      #(trbls.edge.clt/restore-user trbls-client %)]
       (trbls.edge.clt/register-user trbls-client {:form-params {:user {:registree reg}}})
       (trbls.edge.clt/delete-user trbls-client {:target-username           (:username reg)
                                                 :tarabulus-auth-token-auth reg})
@@ -125,7 +125,7 @@
     (let [trbls-client (rbt.u.t/get-component! :tarabulus-client)
           reg          (generate-schema trbls.rts.user/Registree)
           pwd-resetee  (generate-schema trbls.rts.user/PasswordResetee)
-          run-api      (partial trbls.edge.clt/reset-user-password  trbls-client )]
+          run-api      #(trbls.edge.clt/reset-user-password trbls-client %)]
       (trbls.edge.clt/register-user trbls-client {:form-params {:user {:registree reg}}})
       (expect http.pred/bad-request?
         (run-api {:target-username (:username reg)}))

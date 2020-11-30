@@ -40,4 +40,4 @@
                                  (trbls.icept.auth/authorization-interceptor
                                    trbls.icept.auth/path-username-ok?)
                                  (trbls.icept.auth/authorized-interceptor)]
-                  :handler      (partial request-token-handler component)}}]])
+                  :handler      #(request-token-handler component %)}}]])

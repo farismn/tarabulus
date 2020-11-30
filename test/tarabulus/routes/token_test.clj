@@ -21,7 +21,7 @@
   (into []
         (comp
           (filter keyword?)
-          (filter (comp (partial not= :enum))))
+          (filter #(not= % :enum)))
         (ml/form trbls.rts.token/AcceptedKinds)))
 
 (defn- generate-schema
@@ -34,7 +34,7 @@
   (expecting "token fetched"
     (let [trbls-client (rbt.u.t/get-component! :tarabulus-client)
           username     (generate-schema trbls.data.user/Username)
-          run-api      (partial trbls.edge.clt/request-token trbls-client)]
+          run-api      #(trbls.edge.clt/request-token trbls-client %)]
       (expect http.pred/bad-request?
         (let [kind (generate-schema trbls.data.token/Kind)]
           (run-api {:target-username username

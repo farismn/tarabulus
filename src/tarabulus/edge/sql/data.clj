@@ -33,7 +33,7 @@
   [this result options]
   (into []
         (comp
-          (map (partial cske/transform-keys csk/->kebab-case-keyword))
+          (map #(cske/transform-keys csk/->kebab-case-keyword %))
           (map #(set/rename-keys % sql-key->app-key)))
         (hugsql.adapter/result-many this result options)))
 
